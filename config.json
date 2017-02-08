@@ -1,0 +1,8 @@
+{
+  "77E1E0CF":"playerctl next",
+  "77E110CF":"playerctl previous",
+  "77E120CF":"playerctl play-pause",
+  "77E1D0CF":"amixer set Master 5%+ unmute",
+  "77E1B0CF":"amixer set Master 5%- unmute"
+
+}
