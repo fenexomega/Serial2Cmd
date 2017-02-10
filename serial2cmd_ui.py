@@ -28,7 +28,7 @@ class MainWindow(QMainWindow):
 	scanPorts = pyqtSignal()
 	startLoop = pyqtSignal()
 	runningThread = None
-	config = 'config.json'
+	config = CONFIG_FILE
 	mainObject = None
 	editorWindow = None
 
@@ -46,20 +46,21 @@ class MainWindow(QMainWindow):
 		# Init QSystemTrayIcon
 		self.tray_icon = QSystemTrayIcon(self)
 
-		self.editorWindow = EditorDialog(okFunc=self.saveJsonConfigFile)
+		self.editorWindow = EditorDialog(self.mainObject, okFunc=self.saveJsonConfigFile)
 		self.tray_icon.setIcon(QIcon('icon.png'))
 
 		quit_action = QAction("Exit", self)
 		quit_action.triggered.connect(self.appQuit)
 
 		tray_menu = QMenu()
+		tray_menu.addAction("Monitor...").setEnabled(False)
 
 		self.sub_menu_port = tray_menu.addMenu("Choose port")
 		self.rescan = QAction('Rescan')
 		self.rescan.triggered.connect(self.scanPorts.emit)
 
-		edit_bindings = tray_menu.addAction("Edit Bindings")
-		edit_bindings.triggered.connect(lambda: self.editorWindow.showWithRows(self.mainObject))
+		edit_bindings = tray_menu.addAction("Edit Bindings...")
+		edit_bindings.triggered.connect(self.editorWindow.show)
 
 		# baud submenu
 		sub_menu_baud = tray_menu.addMenu("Choose baud")

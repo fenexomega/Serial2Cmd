@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
-import sys, glob, serial, argparse, json, threading, subprocess
+import sys, glob, serial, argparse, json, threading, subprocess, os
 from time import sleep
+
+USER_HOME = os.getenv('HOME')
+CONFIG_DIR = USER_HOME + '/.config/serial2cmd/'
+CONFIG_FILE = CONFIG_DIR + 'config.json'
 
 def eprint(*args,**kwargs):
     print(*args,file=sys.stderr, **kwargs)
@@ -10,7 +14,7 @@ def setArgs():
     parser = argparse.ArgumentParser()
     parser.add_argument('-b','--baud',help='Specify Baud rate. Default is 9600.',type=int,default=9600)
     parser.add_argument('-p','--port',help='Specify Serial Port. Default is the first one found.')
-    parser.add_argument('config',nargs='?',help='Config file to read. Default to $HOME/.serialcmd/config.json.',default='.serialcmd/config.json')
+    parser.add_argument('config',nargs='?',help='Config file to read. Default to ' + CONFIG_FILE + '.',default=CONFIG_FILE)
     return parser.parse_args()
 
 class MainObject:
@@ -106,6 +110,7 @@ class ExecThread(threading.Thread):
         subprocess.call(self.command,shell=True)
         print("[" + super().getName() +"] Exiting")
 
+# FIXME 
 if __name__ == "__main__":
     args = setArgs()
     ports = serial_ports()

@@ -1,16 +1,16 @@
 #encoding: utf-8
-from PyQt5.QtWidgets import QMainWindow, QWidget, QHeaderView,QTableWidgetItem
+from PyQt5.QtWidgets import QMainWindow, QWidget, QHeaderView,QTableWidgetItem, QApplication
 from editor import Ui_editor
 from PyQt5.QtCore import QCoreApplication
 
 class EditorDialog(QWidget, Ui_editor):
 
 
-    def __init__(self,parent=None,okFunc=None):
+    def __init__(self, configObject, parent=None, okFunc=None):
         super().__init__(parent=parent)
 
         self.okFunc = okFunc
-
+        self.configObject = configObject
         # setup UI from Designer
         self.setupUi(self)
         self.okButton.clicked.connect(self.okClicked)
@@ -52,11 +52,15 @@ class EditorDialog(QWidget, Ui_editor):
         while self.table.rowCount() != 0:
             self.table.removeRow(0)
 
-
-    def showWithRows(self,configObject):
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.center()
         self.show()
         self.removeAllRows()
-        self.addRows(configObject)
+        self.addRows(self.configObject)
+
+
+
 
     def rowsToMap(self):
         myMap = {}
@@ -66,11 +70,19 @@ class EditorDialog(QWidget, Ui_editor):
             myMap[key] = value
         return myMap
 
+    def center(self):
+        frameGm = self.frameGeometry()
+        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
+        centerPoint = QApplication.desktop().screenGeometry(screen).center()
+        frameGm.moveCenter(centerPoint)
+        self.move(frameGm.topLeft())
 
     def okClicked(self):
         self.close()
+        auxMap = self.rowsToMap()
+        self.configObject.configMap = auxMap
         if self.okFunc != None:
-            self.okFunc(self.rowsToMap())
+            self.okFunc(auxMap)
 
     def setOnOkClicked(self, func):
         self.okFunc = func
