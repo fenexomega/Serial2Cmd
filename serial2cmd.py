@@ -1,122 +1,124 @@
-#encoding: utf-8
-from PyQt5.QtWidgets import QApplication, QDialog, QWidget, QSystemTrayIcon, \
-	QMenu, QAction, QStyle, qApp
-from PyQt5.QtCore import QSize,pyqtSignal, QTimer
-from PyQt5.QtGui import QIcon
-from functools import partial
-import threading, time
-import main
-from util import set_interval
+#!/usr/bin/env python3
+import sys, glob, serial, argparse, json, threading, subprocess
+from time import sleep
+
+def eprint(*args,**kwargs):
+    print(*args,file=sys.stderr, **kwargs)
+
+
+def setArgs():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-b','--baud',help='Specify Baud rate. Default is 9600.',type=int,default=9600)
+    parser.add_argument('-p','--port',help='Specify Serial Port. Default is the first one found.')
+    parser.add_argument('config',nargs='?',help='Config file to read. Default to $HOME/.serialcmd/config.json.',default='.serialcmd/config.json')
+    return parser.parse_args()
+
+class MainObject:
+
+    serial = None
+    running = False
+
+    def __init__(self,config,port,baud):
+        self.config = config
+        self.port = port
+        self.baud = baud
+
+    # found at
+    # http://stackoverflow.com/questions/12090503/listing-available-com-ports-with-python
+    def serial_ports(self):
+        """ Lists serial port names
+
+            :raises EnvironmentError:
+                On unsupported or unknown platforms
+            :returns:
+                A list of the serial ports available on the system
+        """
+        if sys.platform.startswith('win'):
+            ports = ['COM%s' % (i + 1) for i in range(256)]
+        elif sys.platform.startswith('linux') or sys.platform.startswith('cygwin'):
+            # this excludes your current terminal "/dev/tty"
+            ports = glob.glob('/dev/tty[A-Za-z]*')
+        elif sys.platform.startswith('darwin'):
+            ports = glob.glob('/dev/tty.*')
+        else:
+            raise EnvironmentError('Unsupported platform')
+
+        result = []
+        for port in ports:
+            try:
+                s = serial.Serial(port)
+                s.close()
+                result.append(port)
+            except (OSError, serial.SerialException):
+                pass
+        return result
+
+    def mapConfigFile(self,file):
+        with open(file, 'r') as myfile:
+            data=myfile.read().replace('\n', '')
+        decoded = json.loads(data)
+        return decoded
+
+    def openJsonConfig(self, jsonFile):
+        self.configMap = self.mapConfigFile(jsonFile)
+
+    def configSerial(self,port,baud):
+        if self.serial == None:
+            self.serial = serial.Serial(port,baud)
+            if not self.serial.isOpen():
+                self.serial.open()
+        else:
+            self.serial.port = port
+            self.serial.baud = baud
+
+    def isRunning(self):
+        return self.running
+
+    def exec_loop(self):
+        self.running = True
+        self.openJsonConfig(self.config)
+        if self.serial == None or not self.serial.isOpen():
+            self.configSerial(self.port,self.baud)
+        lastCommand = None
+        while True:
+            while self.serial.inWaiting() == 0:
+                #function to sleep
+                if not self.running:
+                    return
+                sleep(0.1)
+            line = self.serial.readline().decode('utf-8').replace('\r\n','')
+            if line == "FFFFFFFF" and not lastCommand == None:
+                line = lastCommand
+            else:
+                lastCommand = line
+            try:
+                ExecThread(self.configMap[line]).start()
+            except KeyError as e:
+                print("Key",e,"Not Implemented")
 
 class ExecThread(threading.Thread):
-	def __init__(self,func):
-		super().__init__()
-		self.func = func
+    def __init__(self,command):
+        super().__init__()
+        self.command = command
 
-	def run(self):
-		self.func()
-
-class MainWindow(QDialog):
-	"""
-		 Сheckbox and system tray icons.
-		 Will initialize in the constructor.
-	"""
-	scanPorts = pyqtSignal()
-	startLoop = pyqtSignal()
-	runningThread = None
-	config = 'config.json'
-	mainObject = None
-
-	# Override the class constructor
-	def __init__(self):
-		# Be sure to call the super class method
-		super().__init__()
-
-		self.port = None
-		self.baud = 9600
-		self.mainObject = main.MainObject(self.config,self.port,\
-		self.baud)
-
-		# Init QSystemTrayIcon
-		self.tray_icon = QSystemTrayIcon(self)
-		self.tray_icon.setIcon(QIcon('icon.png'))
-
-		quit_action = QAction("Exit", self)
-		quit_action.triggered.connect(self.appQuit)
-
-		tray_menu = QMenu()
-
-		self.sub_menu_port = tray_menu.addMenu("Choose port")
-		self.rescan = QAction('Rescan')
-		self.rescan.triggered.connect(self.scanPorts.emit)
-		# baud submenu
-		sub_menu_baud = tray_menu.addMenu("Choose baud")
-		l = [1200,2400,4800,9600,14400,19200,28800,38400,57600,115200]
-		for i in l:
-			action = sub_menu_baud.addAction(str(i))
-			action.font().bold = False
-			action.triggered.connect(partial(self.chooseBaud,i))
-			action.checkable = True
-			if i == self.baud:
-				action.checked = True
-
-		tray_menu.addAction(quit_action)
-
-		self.tray_icon.setContextMenu(tray_menu)
-		self.tray_icon.show()
-
-		#set signal
-		self.scanPorts.connect(self.addPortsToMenu)
-		self.scanPorts.emit()
-		self.startLoop.connect(self.runLoop)
-		self.startLoop.emit()
-
-	def runLoop(self):
-		self.mainObject.configSerial(self.port, self.baud)
-		if not self.mainObject.isRunning():
-			self.thread = ExecThread(lambda: 	self.mainObject.exec_loop())
-			self.thread.start()
-
-	def configSerial(self):
-		self.mainObject.configSerial(self.port, self.baud)
-
-	def choosePort(self,action,port):
-		self.port = port
-		action.checked = True
-		print("Chosen port is " + self.port)
-		self.configSerial()
-
-	def chooseBaud(self, baud):
-		self.baud = baud
-		print("Chosen baud is " + str(self.baud))
-		self.configSerial()
-
-
-	def addPortsToMenu(self):
-		menu = self.sub_menu_port
-		menu.clear()
-		ports = self.mainObject.serial_ports()
-		if self.port == None and len(ports) > 0:
-			self.port = ports[0]
-		for i in ports:
-			action = menu.addAction(i)
-			action.checkable = True
-			action.triggered.connect(partial(self.choosePort,action,i))
-		menu.addSeparator()
-		menu.addAction(self.rescan)
-
-	def appQuit(self):
-		self.mainObject.running = False
-		while self.thread.is_alive():
-			print("Desligando thread")
-			time.sleep(0.5)
-		self.thread.join()
-		print("Thread desligada")
-		qApp.quit()
-
+    def run(self):
+        print("[" + super().getName() +"] running \'" + self.command + "\'")
+        subprocess.call(self.command,shell=True)
+        print("[" + super().getName() +"] Exiting")
 
 if __name__ == "__main__":
-	import sys
-	app = QApplication(sys.argv)
-	mw = MainWindow()
-	sys.exit(app.exec_())
+    args = setArgs()
+    ports = serial_ports()
+    print("available ports:")
+    for port in ports:
+        print(port)
+    if args.port == None:
+            if len(ports) == 0:
+                eprint("error: didn't found any ports. Exiting.")
+                sys.exit(1)
+            args.port = ports[0]
+
+    exec_loop()
+
+
+    # DO SHIT
