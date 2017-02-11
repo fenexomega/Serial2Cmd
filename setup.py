@@ -7,17 +7,19 @@ setup(name="serial2cmd",
         url='https://github.com/fenexomega/serial2cmd',
         keywords='serial python shell commands',
         packages=['serial2cmd'],
+# https://docs.python.org/2/distutils/setupscript.html
+        package_dir={'serial2cmd':'serial2cmd/'},
+        package_data={'serial2cmd':['config.json','icons/*.png']},
         entry_points={
         'gui_scripts':[
             'serial2cmd = serial2cmd.ui:main'
             ]
         },
 #        install_requires=['pyqt5','pyserial'],
+
         data_files=[
             ('share/icons/hicolor/scalable/apps', ['serial2cmd.svg']),
-            ('share/applications/',['serial2cmd.desktop']),
-            ('share/serial2cmd/',['config.json']),
-            ('share/serial2cmd/icons/', ['icons/icon128.png','icons/icon32.png'])
+            ('share/applications/',['serial2cmd.desktop'])
             ],
         classifiers=[
          # How mature is this project? Common values are
