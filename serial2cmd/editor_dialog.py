@@ -2,6 +2,8 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHeaderView,QTableWidgetItem, QApplication
 from editor import Ui_editor
 from PyQt5.QtCore import QCoreApplication
+from PyQt5.QtGui import QIcon
+from config import *
 
 class EditorDialog(QWidget, Ui_editor):
 
@@ -9,6 +11,7 @@ class EditorDialog(QWidget, Ui_editor):
     def __init__(self, configObject, parent=None, okFunc=None):
         super().__init__(parent=parent)
 
+        self.setWindowIcon(QIcon(ICON_FILE))
         self.okFunc = okFunc
         self.configObject = configObject
         # setup UI from Designer

@@ -6,11 +6,10 @@ from PyQt5.QtGui import QIcon
 from functools import partial
 import threading, time, json, os
 import serial2cmd
-from util import set_interval
 from editor_dialog import EditorDialog
+from config import *
 
-CONFIG_DIR 	=	os.getenv("HOME") + '/.config/serial2cmd/'
-CONFIG_FILE =	CONFIG_DIR + 'config.json'
+
 
 class ExecThread(threading.Thread):
 	def __init__(self,func):
@@ -47,7 +46,7 @@ class MainWindow(QMainWindow):
 		self.tray_icon = QSystemTrayIcon(self)
 
 		self.editorWindow = EditorDialog(self.mainObject, okFunc=self.saveJsonConfigFile)
-		self.tray_icon.setIcon(QIcon('icon.png'))
+		self.tray_icon.setIcon(QIcon(TRAY_ICON_FILE))
 
 		quit_action = QAction("Exit", self)
 		quit_action.triggered.connect(self.appQuit)
@@ -139,10 +138,12 @@ class MainWindow(QMainWindow):
 		print("Thread desligada")
 		qApp.quit()
 
-
-if __name__ == "__main__":
+def main():
 	import sys
 	app = QApplication(sys.argv)
 	mw = MainWindow()
 	QApplication.setQuitOnLastWindowClosed(False)
 	sys.exit(app.exec_())
+
+if __name__ == "__main__":
+	main()
