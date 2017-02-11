@@ -15,7 +15,9 @@ setup(name="serial2cmd",
         install_requires=['PyQt5','PySerial'],
         data_files=[
             ('share/icons/hicolor/scalable/apps', ['serial2cmd.svg']),
-            ('share/applications/',['serial2cmd.desktop'])
+            ('share/applications/',['serial2cmd.desktop']),
+            ('share/serial2cmd/',['config.json']),
+            ('share/serial2cmd/icons/', ['icons/icon128.png','icons/icon32.png'])
             ],
         classifiers=[
          # How mature is this project? Common values are
