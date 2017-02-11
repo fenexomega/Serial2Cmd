@@ -8,7 +8,8 @@ setup(name="serial2cmd",
         keywords='serial python shell commands',
         packages=['serial2cmd'],
 # https://docs.python.org/2/distutils/setupscript.html
-        package_data={'':['config.json','icons/*.png']},
+        package_data={'serial2cmd':['data/config.json','icons/*.png']},
+        include_package_data=True,
         entry_points={
         'gui_scripts':[
             'serial2cmd = serial2cmd.ui:main'
