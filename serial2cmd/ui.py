@@ -6,10 +6,10 @@ from PyQt5.QtCore import QSize,pyqtSignal, QTimer
 from PyQt5.QtGui import QIcon
 from functools import partial
 import threading, time, json, os
+import shutil
 from serial2cmd.main_object import MainObject
 from serial2cmd.editor_dialog import EditorDialog
 from serial2cmd.config import *
-
 
 
 class ExecThread(threading.Thread):
@@ -22,8 +22,7 @@ class ExecThread(threading.Thread):
 
 class MainWindow(QMainWindow):
 	"""
-		 Сheckbox and system tray icons.
-		 Will initialize in the constructor.
+		TODO
 	"""
 	scanPorts = pyqtSignal()
 	startLoop = pyqtSignal()
@@ -36,7 +35,7 @@ class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
 		# Be sure to call the super class method
-
+		self.checkIfConfigFileExists()
 
 		self.port = None
 		self.baud = 9600
@@ -138,6 +137,17 @@ class MainWindow(QMainWindow):
 		self.thread.join()
 		print("Thread desligada")
 		qApp.quit()
+
+	def checkIfConfigFileExists(self):
+		if not os.path.isdir(CONFIG_DIR):
+			os.mkdir(CONFIG_DIR)
+			shutil.copy2(DEFAULT_CONFIG_FILE,CONFIG_FILE)
+		else:
+			if not os.path.exists(CONFIG_FILE):
+				file = open(CONFIG_FILE,'w')
+				file.write('{}')
+				file.close()
+
 
 def main():
 	import sys
