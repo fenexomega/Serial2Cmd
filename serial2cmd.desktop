@@ -1,24 +1,11 @@
 [Desktop Entry]
-
-# The type as listed above
 Type=Application
-
-Version=1.0
-
+Version=1.1
 Name=Serial2Cmd
-
 # A comment which can/will be used as a tooltip
 Comment=Map input from serial ports to bash commands
-
 # The path to the folder in which the executable is run
 # Path=/opt/jmemorise
-
-# The executable of the application, possibly with arguments.
 Exec=serial2cmd
-
-# The name of the icon that will be used to display this entry
 Icon=serial2cmd
-
-Terminal=false
-
 Categories=Utility;
