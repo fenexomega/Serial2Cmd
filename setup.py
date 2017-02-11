@@ -12,7 +12,7 @@ setup(name="serial2cmd",
             'serial2cmd = serial2cmd.ui:main'
             ]
         },
-        install_requires=['PyQt5','PySerial'],
+        install_requires=['pyqt5','pyserial'],
         data_files=[
             ('share/icons/hicolor/scalable/apps', ['serial2cmd.svg']),
             ('share/applications/',['serial2cmd.desktop']),
