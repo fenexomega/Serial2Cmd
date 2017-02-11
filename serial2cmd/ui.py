@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #encoding: utf-8
 from PyQt5.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, \
 	QMenu, QAction, QStyle, qApp
@@ -5,9 +6,9 @@ from PyQt5.QtCore import QSize,pyqtSignal, QTimer
 from PyQt5.QtGui import QIcon
 from functools import partial
 import threading, time, json, os
-import serial2cmd
-from editor_dialog import EditorDialog
-from config import *
+from serial2cmd.main_object import MainObject
+from serial2cmd.editor_dialog import EditorDialog
+from serial2cmd.config import *
 
 
 
@@ -39,7 +40,7 @@ class MainWindow(QMainWindow):
 
 		self.port = None
 		self.baud = 9600
-		self.mainObject = serial2cmd.MainObject(self.config,self.port,\
+		self.mainObject = MainObject(self.config,self.port,\
 		self.baud)
 
 		# Init QSystemTrayIcon

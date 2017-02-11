@@ -13,7 +13,7 @@ run:
 	@echo "Running app"
 	@python3 serial2cmd/serial2cmd_ui.py
 
-install: generate
+install: 
 	@chmod +x run.py
 	@cp run.py $(BIN_DIR)
 	@cp -r serial2cmd/ $(LIB_DIR)

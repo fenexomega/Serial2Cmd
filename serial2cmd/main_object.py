@@ -110,7 +110,7 @@ class ExecThread(threading.Thread):
         subprocess.call(self.command,shell=True)
         print("[" + super().getName() +"] Exiting")
 
-# FIXME 
+# FIXME
 if __name__ == "__main__":
     args = setArgs()
     ports = serial_ports()

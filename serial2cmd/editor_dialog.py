@@ -1,9 +1,9 @@
 #encoding: utf-8
 from PyQt5.QtWidgets import QMainWindow, QWidget, QHeaderView,QTableWidgetItem, QApplication
-from editor import Ui_editor
+from serial2cmd.editor import Ui_editor
 from PyQt5.QtCore import QCoreApplication
 from PyQt5.QtGui import QIcon
-from config import *
+from serial2cmd.config import *
 
 class EditorDialog(QWidget, Ui_editor):
 
