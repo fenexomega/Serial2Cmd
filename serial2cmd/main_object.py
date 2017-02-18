@@ -85,20 +85,25 @@ class MainObject:
             self.configSerial(self.port,self.baud)
         lastCommand = None
         while True:
-            while self.serial.inWaiting() == 0:
-                #function to sleep
-                if not self.running:
-                    return
-                sleep(0.1)
-            line = self.serial.readline().decode('utf-8').replace('\r\n','')
-            if line == "FFFFFFFF" and not lastCommand == None:
-                line = lastCommand
-            else:
-                lastCommand = line
             try:
-                ExecThread(self.configMap[line]).start()
-            except KeyError as e:
-                print("Key",e,"Not Implemented")
+                while self.serial.inWaiting() == 0:
+                    #function to sleep
+                    if not self.running:
+                        return
+                    sleep(0.1)
+                line = self.serial.readline().decode('utf-8').replace('\r\n','')
+                if line == "FFFFFFFF" and not lastCommand == None:
+                    line = lastCommand
+                else:
+                    lastCommand = line
+                try:
+                    ExecThread(self.configMap[line]).start()
+                except KeyError as e:
+                    print("Key",e,"Not Implemented")
+            except OSError as error:
+                # I know this could be better, but
+                print("[ERROR]: device disconnected?")
+                sleep(1)
 
 class ExecThread(threading.Thread):
     def __init__(self,command):

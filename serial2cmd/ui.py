@@ -14,17 +14,74 @@ from serial2cmd.config import *
 
 class ExecThread(threading.Thread):
 	def __init__(self,func):
-		super().__init__()
-		self.func = func
+            super().__init__()
+            self.func = func
 
 	def run(self):
-		self.func()
+            self.func()
+
+class TrayMenu(QSystemTrayIcon):
+
+    scanPorts = pyqtSignal()
+
+    def __init__(self):
+        super().__init__()
+        self.setIcon(QIcon(TRAY_ICON_FILE))
+    
+    def setMenu(self, mainWindow):
+
+        # Init QSystemTrayIcon
+        quit_action = QAction("Exit", self)
+        quit_action.triggered.connect(mainWindow.appQuit)
+
+        tray_menu = QMenu()
+        tray_menu.addAction("Monitor...").setEnabled(False)
+
+        self.sub_menu_port = tray_menu.addMenu("Choose port")
+        self.rescan = QAction('Rescan')
+        self.rescan.triggered.connect(self.scanPorts.emit)
+
+        edit_bindings = tray_menu.addAction("Edit Bindings...")
+        edit_bindings.triggered.connect(mainWindow.editorWindow.show)
+
+        # baud submenu
+        sub_menu_baud = tray_menu.addMenu("Choose baud")
+        l = [1200,2400,4800,9600,14400,19200,28800,38400,57600,115200]
+        for i in l:
+                action = sub_menu_baud.addAction(str(i))
+                action.font().bold = False
+                action.triggered.connect(partial(mainWindow.chooseBaud,i))
+                action.checkable = True
+                if i == mainWindow.baud:
+                        action.checked = True
+
+        tray_menu.addAction(quit_action)
+
+        self.setContextMenu(tray_menu)
+        self.show()
+        self.scanPorts.connect(lambda: self.addPortsToMenu(mainWindow))
+        self.scanPorts.emit()
+    
+
+    def addPortsToMenu(self, mainWindow):
+            menu = self.sub_menu_port
+            menu.clear()
+            ports = mainWindow.mainObject.serial_ports()
+            if mainWindow.port == None and len(ports) > 0:
+                    mainWindow.port = ports[0]
+            for i in ports:
+                    action = menu.addAction(i)
+                    action.checkable = True
+                    action.triggered.connect(partial(mainWindow.choosePort,action,i))
+            menu.addSeparator()
+            menu.addAction(self.rescan)
+
+    
 
 class MainWindow(QMainWindow):
 	"""
 		TODO
 	"""
-	scanPorts = pyqtSignal()
 	startLoop = pyqtSignal()
 	runningThread = None
 	config = CONFIG_FILE
@@ -33,55 +90,25 @@ class MainWindow(QMainWindow):
 
 	# Override the class constructor
 	def __init__(self):
-		super().__init__()
-		# Be sure to call the super class method
-		self.checkIfConfigFileExists()
+            super().__init__()
+# Be sure to call the super class method
+            self.checkIfConfigFileExists()
 
-		self.port = None
-		self.baud = 9600
-		self.mainObject = MainObject(self.config,self.port,\
-		self.baud)
+            self.port = None
+            self.baud = 9600
+            self.mainObject = MainObject(self.config,self.port,\
+            self.baud)
 
-		# Init QSystemTrayIcon
-		self.tray_icon = QSystemTrayIcon(self)
+            self.editorWindow = EditorDialog(self.mainObject, okFunc=self.saveJsonConfigFile)
 
-		self.editorWindow = EditorDialog(self.mainObject, okFunc=self.saveJsonConfigFile)
-		self.tray_icon.setIcon(QIcon(TRAY_ICON_FILE))
+            self.trayMenu = TrayMenu()
+            self.trayMenu.setMenu(self)
 
-		quit_action = QAction("Exit", self)
-		quit_action.triggered.connect(self.appQuit)
 
-		tray_menu = QMenu()
-		tray_menu.addAction("Monitor...").setEnabled(False)
-
-		self.sub_menu_port = tray_menu.addMenu("Choose port")
-		self.rescan = QAction('Rescan')
-		self.rescan.triggered.connect(self.scanPorts.emit)
-
-		edit_bindings = tray_menu.addAction("Edit Bindings...")
-		edit_bindings.triggered.connect(self.editorWindow.show)
-
-		# baud submenu
-		sub_menu_baud = tray_menu.addMenu("Choose baud")
-		l = [1200,2400,4800,9600,14400,19200,28800,38400,57600,115200]
-		for i in l:
-			action = sub_menu_baud.addAction(str(i))
-			action.font().bold = False
-			action.triggered.connect(partial(self.chooseBaud,i))
-			action.checkable = True
-			if i == self.baud:
-				action.checked = True
-
-		tray_menu.addAction(quit_action)
-
-		self.tray_icon.setContextMenu(tray_menu)
-		self.tray_icon.show()
-
-		#set signal
-		self.scanPorts.connect(self.addPortsToMenu)
-		self.scanPorts.emit()
-		self.startLoop.connect(self.runLoop)
-		self.startLoop.emit()
+#set signal
+            self.startLoop.connect(self.runLoop)
+            self.startLoop.emit()
+            
 
 
 	def saveJsonConfigFile(self, map):
@@ -96,10 +123,10 @@ class MainWindow(QMainWindow):
 
 
 	def runLoop(self):
-		self.mainObject.configSerial(self.port, self.baud)
-		if not self.mainObject.isRunning():
-			self.thread = ExecThread(lambda: 	self.mainObject.exec_loop())
-			self.thread.start()
+                self.mainObject.configSerial(self.port, self.baud)
+                if not self.mainObject.isRunning():
+                    self.thread = ExecThread(lambda: 	self.mainObject.exec_loop())
+                    self.thread.start()
 
 	def configSerial(self):
 		self.mainObject.configSerial(self.port, self.baud)
@@ -116,18 +143,6 @@ class MainWindow(QMainWindow):
 		self.configSerial()
 
 
-	def addPortsToMenu(self):
-		menu = self.sub_menu_port
-		menu.clear()
-		ports = self.mainObject.serial_ports()
-		if self.port == None and len(ports) > 0:
-			self.port = ports[0]
-		for i in ports:
-			action = menu.addAction(i)
-			action.checkable = True
-			action.triggered.connect(partial(self.choosePort,action,i))
-		menu.addSeparator()
-		menu.addAction(self.rescan)
 
 	def appQuit(self):
 		self.mainObject.running = False
